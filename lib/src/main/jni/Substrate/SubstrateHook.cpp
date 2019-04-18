@@ -24,6 +24,7 @@
 
 #include <sys/mman.h>
 
+
 #define _trace() do { \
     MSLog(MSLogLevelNotice, "_trace(%u)", __LINE__); \
 } while (false)
@@ -87,10 +88,12 @@ X 4790  ldr r*,[pc,#*]    */
 #define T$b$_$im(cond,im) /* b<cond> #im */ \
     (cond == A$al ? 0xe000 | (((im) >> 1) & 0x7ff) : 0xd000 | ((cond) << 8) | (((im) >> 1) & 0xff))
 
+#define zabs(im) ((im) >= 0 ? (im) : -(im))
+
 #define T1$ldr_rt_$rn_im$(rt, rn, im) /* ldr rt, [rn, #im] */ \
     (0xf850 | ((im < 0 ? 0 : 1) << 7) | (rn))
 #define T2$ldr_rt_$rn_im$(rt, rn, im) /* ldr rt, [rn, #im] */ \
-    (((rt) << 12) | abs(im))
+    (((rt) << 12) | zabs(im))
 
 #define T1$mrs_rd_apsr(rd) /* mrs rd, apsr */ \
     (0xf3ef)

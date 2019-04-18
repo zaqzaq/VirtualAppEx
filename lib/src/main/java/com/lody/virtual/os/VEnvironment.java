@@ -68,6 +68,10 @@ public class VEnvironment {
         return new File(getDataAppPackageDirectory(packgeName), "base.apk");
     }
 
+    public static File getPackageLibPath(String packgeName) {
+        return new File(getDataAppPackageDirectory(packgeName), "lib");
+    }
+
     public static File getDataAppDirectory() {
         return ensureCreated(new File(getDataDirectory(), "app"));
     }

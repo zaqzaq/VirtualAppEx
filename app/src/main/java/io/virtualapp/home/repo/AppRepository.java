@@ -4,7 +4,7 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-
+import android.util.Log;
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
@@ -31,10 +31,15 @@ import io.virtualapp.home.models.PackageAppData;
  * @author Lody
  */
 public class AppRepository implements AppDataSource {
+    private static final String TAG = AppRepository.class.getSimpleName();
 
     private static final Collator COLLATOR = Collator.getInstance(Locale.CHINA);
+    /**
+     * FIXME by zyj 自动扫描的安装包路径
+     */
     private static final List<String> SCAN_PATH_LIST = Arrays.asList(
             ".",
+            "freshz/plugin",
             "wandoujia/app",
             "tencent/tassistant/apk",
             "BaiduAsa9103056",
@@ -54,15 +59,21 @@ public class AppRepository implements AppDataSource {
                 && !GmsSupport.isGmsFamilyPackage(packageInfo.packageName);
     }
 
+    /**
+     * 获取所有已安装的应用
+     * @return
+     */
     @Override
     public Promise<List<AppData>, Throwable, Void> getVirtualApps() {
         return VUiKit.defer().when(() -> {
             List<InstalledAppInfo> infos = VirtualCore.get().getInstalledApps(0);
             List<AppData> models = new ArrayList<>();
             for (InstalledAppInfo info : infos) {
+                /*
+                  所有应用都展示
                 if (!VirtualCore.get().isPackageLaunchable(info.packageName)) {
                     continue;
-                }
+                }*/
                 PackageAppData data = new PackageAppData(mContext, info);
                 if (VirtualCore.get().isAppInstalledAsUser(0, info.packageName)) {
                     models.add(data);
@@ -127,7 +138,16 @@ public class AppRepository implements AppDataSource {
             if (isSystemApplication(pkg)) {
                 continue;
             }
-            ApplicationInfo ai = pkg.applicationInfo;
+            ApplicationInfo ai;
+
+            try {
+                ai = context.getPackageManager().getApplicationInfo(pkg.packageName, PackageManager.GET_META_DATA);
+
+            } catch (PackageManager.NameNotFoundException e) {
+                Log.w(TAG,"PackageManager.NameNotFoundException ... ingore",e);
+                ai = pkg.applicationInfo;
+            }
+
             String path = ai.publicSourceDir != null ? ai.publicSourceDir : ai.sourceDir;
             if (path == null) {
                 continue;
