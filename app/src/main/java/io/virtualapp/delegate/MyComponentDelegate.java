@@ -5,8 +5,10 @@ import android.app.Application;
 import android.content.Intent;
 import android.util.Log;
 import com.lody.virtual.client.hook.delegate.ComponentDelegate;
-import com.taobao.android.dexposed.DexposedBridge;
-import com.taobao.android.dexposed.XC_MethodHook;
+import com.lody.whale.xposed.XC_MethodHook;
+import com.lody.whale.xposed.XposedHelpers;
+
+import java.io.File;
 
 
 public class MyComponentDelegate implements ComponentDelegate {
@@ -17,38 +19,31 @@ public class MyComponentDelegate implements ComponentDelegate {
         //放狗
         Log.w(TAG,"beforeApplicationCreate:开始放狗啦！");
         try {
-
-
-            class ThreadMethodHook extends XC_MethodHook {
-                @Override
-                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                    super.beforeHookedMethod(param);
-                    Thread t = (Thread) param.thisObject;
-                    Log.i(TAG, "thread:" + t + ", started..");
-                }
+            XposedHelpers.findAndHookConstructor(File.class,String.class,new XC_MethodHook() {
 
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                     super.afterHookedMethod(param);
-                    Thread t = (Thread) param.thisObject;
-                    Log.i(TAG, "thread:" + t + ", exit..");
-                }
-            }
-
-            DexposedBridge.hookAllConstructors(Thread.class, new XC_MethodHook() {
-                @Override
-                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                    super.afterHookedMethod(param);
-                    Thread thread = (Thread) param.thisObject;
-                    Class<?> clazz = thread.getClass();
-                    if (clazz != Thread.class) {
-                        Log.d(TAG, "found class extend Thread:" + clazz);
-                        DexposedBridge.findAndHookMethod(clazz, "run", new ThreadMethodHook());
-                    }
-                    Log.d(TAG, "Thread: " + thread.getName() + " class:" + thread.getClass() +  " is created.");
+                    Object fileName = param.args[0];
+                    Log.d(TAG, "open file "+fileName);
                 }
             });
-            DexposedBridge.findAndHookMethod(Thread.class, "run", new ThreadMethodHook());
+
+
+            Class<?>  aClass = Class.forName("com.xubei.shop.ui.module.login.presenter.LoginPresenter", true, application.getClassLoader());
+
+            XposedHelpers.findAndHookMethod(aClass, "userInfoIndex",String.class,String.class,String.class,new XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+
+                    Object authorization = param.args[0];
+                    Object phone = param.args[2];
+
+                    Log.i(TAG, "业务系统用户登陆成功 phone:"+phone+" authorization:"+authorization);
+                    super.beforeHookedMethod(param);
+                }
+            });
+
 
         }
         catch (Exception e) {
